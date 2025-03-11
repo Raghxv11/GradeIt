@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Gradebook</title>
+  <link rel="stylesheet" href="grading.css">
+</head>
+<body>
+  <div class="container">
+    <div class="gradebook-header">
+      <div class="student-names">
+        <h2>Student Names</h2>
+        <div class="search-container">
+          <input type="text" placeholder="Search Students">
+          <span class="dropdown-icon">▼</span>
+        </div>
+        <button class="filter-button">
+          <span class="filter-icon">⊳</span>
+          Apply Filters
+        </button>
+      </div>
+      <div class="assignment-names">
+        <h2>Assignment Names</h2>
+        <div class="search-container">
+          <input type="text" placeholder="Search Assignments">
+          <span class="dropdown-icon">▼</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gradebook-table">
+      <table>
+        <thead>
+          <tr>
+            <th class="student-name-header">Student Name</th>
+            <th>
+                Assignment 1<br>
+                Out of 10
+            </th>
+            <th>
+                Assignment 2<br>
+                Out of 10
+            </th>
+            <th>
+                Assignment 3<br>
+                Out of 10
+            </th>
+            <th>
+              Final Project<br>
+              Out of 100
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="student-name">Alex Johnson</td>
+            <td>10</td>
+            <td>10</td>
+            <td>9</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td class="student-name">Taylor Smith</td>
+            <td>10</td>
+            <td class="highlighted">6</td>
+            <td>10</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td class="student-name">Jordan Lee</td>
+            <td>10</td>
+            <td>9.75</td>
+            <td>10</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td class="student-name">Casey Brown</td>
+            <td>10</td>
+            <td>9.5</td>
+            <td>8</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td class="student-name">Riley Wilson</td>
+            <td class="highlighted">0</td>
+            <td>9</td>
+            <td>10</td>
+            <td>-</td>
+        </tr>
+          <tr>
+            <td class="student-name">Morgan Davis</td>
+            <td>10</td>
+            <td>10</td>
+            <td>9</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td class="student-name">Quinn Miller</td>
+            <td>10</td>
+            <td>9</td>
+            <td>9</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td class="student-name">Avery Garcia</td>
+            <td>10</td>
+            <td>10</td>
+            <td class="highlighted">2</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td class="student-name">Jamie Martinez</td>
+            <td class="highlighted">0</td>
+            <td>10</td>
+            <td>9</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td class="student-name">Dakota Robinson</td>
+            <td>10</td>
+            <td>9.5</td>
+            <td>8</td>
+            <td>-</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
