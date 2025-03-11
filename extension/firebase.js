@@ -1,22 +1,28 @@
 // Import the functions you need from our local Firebase bundle
 import { initializeApp } from "./firebase-bundle/firebase-app.js";
 import { getFirestore, collection, getDocs } from "./firebase-bundle/firebase-firestore.js";
+import { getFirebaseConfig } from "./config.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyACLvunRNHz5Ja7iJagI3ri4DJ4F-lu3d8",
-  authDomain: "gradify-extension.firebaseapp.com",
-  projectId: "gradify-extension",
-  storageBucket: "gradify-extension.firebasestorage.app",
-  messagingSenderId: "915234556406",
-  appId: "1:915234556406:web:b991375217736ef0c4dfd7",
-  measurementId: "G-5Q502T1HF5"
-};
+// Initialize Firebase with configuration from environment
+let app;
+let db;
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Asynchronously initialize Firebase
+async function initializeFirebase() {
+  try {
+    const firebaseConfig = await getFirebaseConfig();
+    console.log('Initializing Firebase with config from environment');
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    return { app, db };
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+    throw error;
+  }
+}
+
+// Initialize Firebase immediately
+const firebaseInitPromise = initializeFirebase();
 
 /**
  * Fetches student data from Firebase Firestore

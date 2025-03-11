@@ -1,21 +1,28 @@
 // Import Firebase functions from our local bundle
 import { initializeApp } from "./firebase-bundle/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc } from "./firebase-bundle/firebase-firestore.js";
+import { getFirebaseConfig } from "./config.js";
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyACLvunRNHz5Ja7iJagI3ri4DJ4F-lu3d8",
-  authDomain: "gradify-extension.firebaseapp.com",
-  projectId: "gradify-extension",
-  storageBucket: "gradify-extension.firebasestorage.app",
-  messagingSenderId: "915234556406",
-  appId: "1:915234556406:web:b991375217736ef0c4dfd7",
-  measurementId: "G-5Q502T1HF5"
-};
+// Initialize Firebase with configuration from environment
+let app;
+let db;
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Asynchronously initialize Firebase
+async function initializeFirebase() {
+  try {
+    const firebaseConfig = await getFirebaseConfig();
+    console.log('Initializing Firebase with config from environment');
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    return { app, db };
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+    throw error;
+  }
+}
+
+// Initialize Firebase immediately
+const firebaseInitPromise = initializeFirebase();
 
 // Sample student data with 10 students and comprehensive information
 
@@ -25,6 +32,9 @@ const db = getFirestore(app);
  */
 async function initializeDatabase() {
   try {
+    // Wait for Firebase to initialize first
+    const { app, db } = await firebaseInitPromise;
+    
     // First, clear any existing data
     const studentsCollection = collection(db, "students");
     const existingStudents = await getDocs(studentsCollection);
@@ -38,8 +48,10 @@ async function initializeDatabase() {
     await Promise.all(addPromises);
     
     console.log("Database initialized successfully with sample data!");
+    return { success: true, message: "Database initialized successfully!" };
   } catch (error) {
     console.error("Error initializing database:", error);
+    return { success: false, message: `Error: ${error.message}` };
   }
 }
 
