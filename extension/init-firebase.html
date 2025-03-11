@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Initialize Firebase Data</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #2563eb;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 10px;
+    }
+    .card {
+      background-color: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    #status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #dcfce7;
+      color: #166534;
+      border-left: 4px solid #22c55e;
+    }
+    .error {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      border-left: 4px solid #ef4444;
+    }
+    .loading {
+      background-color: #f0f9ff;
+      color: #0369a1;
+      border-left: 4px solid #0ea5e9;
+    }
+    pre {
+      background-color: #f1f5f9;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Firebase Data Initialization Tool</h1>
+  
+  <div class="card">
+    <h2>Student Data Upload</h2>
+    <p>This tool will upload a dataset of 10 students to your Firebase Firestore database. The data includes comprehensive student information matching the Student interface.</p>
+    <p><strong>Warning:</strong> This will clear any existing data in the "students" collection before uploading new data.</p>
+    <button id="initButton">Initialize Firebase with Student Data</button>
+    <div id="status"></div>
+  </div>
+  
+  <div class="card">
+    <h2>Student Data Preview</h2>
+    <pre id="dataPreview">Loading student data preview...</pre>
+  </div>
+
+  <!-- No need for external Firebase scripts -->
+  <!-- We're using our local Firebase bundle as ES modules -->
+  <script type="module" src="./firebase-bundle/firebase-app.js"></script>
+  <script type="module" src="./firebase-bundle/firebase-firestore.js"></script>
+  
+  <script type="module">
+    // Using our local Firebase bundle
+    import { initializeApp } from "./firebase-bundle/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "./firebase-bundle/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyACLvunRNHz5Ja7iJagI3ri4DJ4F-lu3d8",
+      authDomain: "gradify-extension.firebaseapp.com",
+      projectId: "gradify-extension",
+      storageBucket: "gradify-extension.firebasestorage.app",
+      messagingSenderId: "915234556406",
+      appId: "1:915234556406:web:b991375217736ef0c4dfd7",
+      measurementId: "G-5Q502T1HF5"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Sample student data with 10 students and comprehensive information
+    const sampleStudents = [
+      {
+        name: "John Smith",
+        id: "CS001",
+        email: "john.smith@university.edu",
+        major: "Computer Science",
+        year: 3,
+        assignments: {
+          assignment1: 85,
+          assignment2: 92,
+          assignment3: 78
+        },
+        finalProject: 90,
+        attendance: 95,
+        participation: 88,
+        notes: "Strong in programming fundamentals, needs improvement in algorithm complexity analysis."
+      },
+      {
+        name: "Emily Johnson",
+        id: "CS002",
+        email: "emily.johnson@university.edu",
+        major: "Computer Science",
+        year: 2,
+        assignments: {
+          assignment1: 95,
+          assignment2: 88,
+          assignment3: 91
+        },
+        finalProject: 94,
+        attendance: 98,
+        participation: 92,
+        notes: "Excellent work on all assignments, particularly strong in UI/UX design."
+      },
+      {
+        name: "Michael Williams",
+        id: "CS003",
+        email: "michael.williams@university.edu",
+        major: "Computer Engineering",
+        year: 4,
+        assignments: {
+          assignment1: 72,
+          assignment2: 80,
+          assignment3: 85
+        },
+        finalProject: 82,
+        attendance: 85,
+        participation: 75,
+        notes: "Improved significantly throughout the semester, strong in hardware integration."
+      },
+      {
+        name: "Jessica Brown",
+        id: "CS004",
+        email: "jessica.brown@university.edu",
+        major: "Data Science",
+        year: 3,
+        assignments: {
+          assignment1: 90,
+          assignment2: 93,
+          assignment3: 89
+        },
+        finalProject: 91,
+        attendance: 92,
+        participation: 90,
+        notes: "Exceptional data analysis skills, contributed valuable insights to group discussions."
+      },
+      {
+        name: "David Miller",
+        id: "CS005",
+        email: "david.miller@university.edu",
+        major: "Information Systems",
+        year: 2,
+        assignments: {
+          assignment1: 78,
+          assignment2: 82,
+          assignment3: 80
+        },
+        finalProject: 85,
+        attendance: 88,
+        participation: 82,
+        notes: "Good understanding of database concepts, needs to improve code documentation."
+      },
+      {
+        name: "Sarah Davis",
+        id: "CS006",
+        email: "sarah.davis@university.edu",
+        major: "Computer Science",
+        year: 3,
+        assignments: {
+          assignment1: 88,
+          assignment2: 90,
+          assignment3: 92
+        },
+        finalProject: 94,
+        attendance: 96,
+        participation: 94,
+        notes: "Consistently high-quality work, particularly strong in algorithm optimization."
+      },
+      {
+        name: "Robert Wilson",
+        id: "CS007",
+        email: "robert.wilson@university.edu",
+        major: "Software Engineering",
+        year: 4,
+        assignments: {
+          assignment1: 75,
+          assignment2: 80,
+          assignment3: 85
+        },
+        finalProject: 82,
+        attendance: 80,
+        participation: 78,
+        notes: "Good teamwork skills, needs to improve individual coding practices."
+      },
+      {
+        name: "Jennifer Martinez",
+        id: "CS008",
+        email: "jennifer.martinez@university.edu",
+        major: "Artificial Intelligence",
+        year: 3,
+        assignments: {
+          assignment1: 92,
+          assignment2: 95,
+          assignment3: 90
+        },
+        finalProject: 96,
+        attendance: 97,
+        participation: 95,
+        notes: "Exceptional work in machine learning projects, great presentation skills."
+      },
+      {
+        name: "Thomas Anderson",
+        id: "CS009",
+        email: "thomas.anderson@university.edu",
+        major: "Cybersecurity",
+        year: 4,
+        assignments: {
+          assignment1: 87,
+          assignment2: 91,
+          assignment3: 88
+        },
+        finalProject: 92,
+        attendance: 91,
+        participation: 89,
+        notes: "Strong understanding of security principles, excellent at identifying vulnerabilities."
+      },
+      {
+        name: "Olivia Parker",
+        id: "CS010",
+        email: "olivia.parker@university.edu",
+        major: "Computer Science",
+        year: 2,
+        assignments: {
+          assignment1: 83,
+          assignment2: 86,
+          assignment3: 90
+        },
+        finalProject: 88,
+        attendance: 94,
+        participation: 87,
+        notes: "Promising talent in software development, particularly in mobile applications."
+      }
+    ];
+
+    // Display student data preview
+    document.getElementById('dataPreview').textContent = JSON.stringify(sampleStudents, null, 2);
+
+    // Initialize database function
+    async function initializeDatabase() {
+      const statusElement = document.getElementById('status');
+      statusElement.className = 'loading';
+      statusElement.textContent = 'Initializing database...';
+      
+      try {
+        // First, clear any existing data
+        const studentsCollection = collection(db, "students");
+        const existingStudents = await getDocs(studentsCollection);
+        
+        statusElement.textContent = `Clearing ${existingStudents.docs.length} existing records...`;
+        
+        const deletePromises = existingStudents.docs.map(docSnapshot => 
+          deleteDoc(doc(db, "students", docSnapshot.id))
+        );
+        await Promise.all(deletePromises);
+        
+        statusElement.textContent = 'Adding 10 student records...';
+        
+        const addPromises = sampleStudents.map(student => 
+          addDoc(collection(db, "students"), student)
+        );
+        await Promise.all(addPromises);
+        
+        statusElement.className = 'success';
+        statusElement.textContent = `Database initialized successfully! Added ${sampleStudents.length} student records.`;
+      } catch (error) {
+        console.error("Error initializing database:", error);
+        statusElement.className = 'error';
+        statusElement.textContent = `Error initializing database: ${error.message}`;
+      }
+    }
+
+    // Add event listener to button
+    document.getElementById('initButton').addEventListener('click', initializeDatabase);
+  </script>
+</body>
+</html>

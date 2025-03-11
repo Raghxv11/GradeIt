@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GradeIt</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Local Firebase bundle scripts -->
+  <script src="firebase-bundle/firebase-app.js" type="module"></script>
+  <script src="firebase-bundle/firebase-firestore.js" type="module"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <i class="fas fa-graduation-cap"></i>
+        <h1>GradeIt</h1>
+      </div>
+      <div class="canvas-status">
+        <i class="fas fa-check-circle"></i>
+        <span>Connected to Canvas</span>
+      </div>
+    </div>
+    
+    <div id="welcome-container">
+      <div class="welcome-content">
+        <h2>Ready to Grade Assignments</h2>
+        <p>GradeIt is connected to your Canvas account and ready to process student submissions.</p>
+        <div class="stats-container">
+          <div class="stat-item">
+            <i class="fas fa-users"></i>
+            <div class="stat-text">
+              <span class="stat-value">24</span>
+              <span class="stat-label">Students</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-file-pdf"></i>
+            <div class="stat-text">
+              <span class="stat-value">18</span>
+              <span class="stat-label">Submissions</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-clock"></i>
+            <div class="stat-text">
+              <span class="stat-value">6</span>
+              <span class="stat-label">Pending</span>
+            </div>
+          </div>
+        </div>
+        <button id="start-grading-btn" class="primary-btn">
+          <i class="fas fa-play"></i> Start Grading Assignments
+        </button>
+       
+      </div>
+    </div>
+    
+    <div id="status-container" class="hidden">
+      <h2><i class="fas fa-sync fa-spin"></i> Grading in Progress</h2>
+      <div class="progress-bar-container">
+        <div id="progress-bar" class="progress-bar"></div>
+        <span id="progress-percentage">0%</span>
+      </div>
+      <div id="files-container"></div>
+      <p id="progress-text">Initializing grading process...</p>
+    </div>
+    
+    <div id="result-container" class="hidden">
+      <div class="success-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h2>Assignments Graded!</h2>
+      <p>All assignments have been successfully graded.</p>
+      <a id="result-link" href="#" target="_blank" class="primary-btn">
+        <i class="fas fa-external-link-alt"></i> View Graded Assignments
+      </a>
+      <button id="back-btn" class="secondary-btn">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </button>
+    </div>
+  </div>
+  
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
