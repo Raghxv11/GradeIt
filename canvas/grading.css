@@ -1,0 +1,125 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Lato', Arial, sans-serif;
+  }
+  
+  body {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 15px;
+  }
+  
+  .gradebook-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .student-names, .assignment-names {
+    width: 48%;
+  }
+  
+  h2 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+  }
+  
+  .search-container {
+    position: relative;
+    margin-bottom: 15px;
+  }
+  
+  .search-container input {
+    width: 100%;
+    padding: 10px 30px 10px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .dropdown-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+  }
+  
+  .filter-button {
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  .filter-icon {
+    margin-right: 8px;
+  }
+  
+  .gradebook-table {
+    overflow-x: auto;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ddd;
+  }
+  
+  th, td {
+    padding: 12px 15px;
+    text-align: center;
+    border: 1px solid #ddd;
+  }
+  
+  th {
+    background-color: #f9f9f9;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  
+  .student-name-header {
+    text-align: left;
+  }
+  
+  .student-name {
+    text-align: left;
+    color: #8C1D40;
+    font-weight: 500;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  tbody tr:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .highlighted {
+    background-color: #FFE8E5;
+  }
+  
+  @media (max-width: 768px) {
+    .gradebook-header {
+      flex-direction: column;
+    }
+    
+    .student-names, .assignment-names {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+  }
