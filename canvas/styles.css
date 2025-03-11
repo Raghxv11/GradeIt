@@ -250,6 +250,7 @@ h2 {
 .rubric-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .rubric-table th, 
@@ -265,10 +266,14 @@ h2 {
   background-color: #f9f9f9;
   font-weight: bold;
   text-align: center;
+  width: 60%;
 }
 
 .criteria-cell {
   width: 25%;
+  padding: 15px;
+  vertical-align: top;
+  line-height: 1.5;
 }
 
 .ratings-cell {
@@ -323,6 +328,16 @@ h2 {
 
 .total-points {
   font-weight: bold;
+}
+
+.criteria-cell strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.criteria-cell br {
+  line-height: 1.8;
 }
 
 /* Right sidebar */
@@ -522,5 +537,21 @@ h2 {
     transform: none;
     border-left: none;
     border-top: 1px solid #ddd;
+  }
+  
+  .rubric-table {
+    font-size: 14px;
+  }
+  
+  .criteria-cell {
+    padding: 10px;
+  }
+  
+  .rating-grid {
+    flex-direction: column;
+  }
+  
+  .rating-column {
+    margin-bottom: 10px;
   }
 }
