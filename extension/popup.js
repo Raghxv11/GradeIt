@@ -1,5 +1,6 @@
-// Import Firebase functions
+// Import Firebase functions and assignment sender
 import { getStudents } from './firebase.js';
+import { sendAssignmentUrls } from './send-assignments.js';
 
 // Define Student interface type for TypeScript compatibility
 /**
@@ -27,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   const backBtn = document.getElementById('back-btn');
 
   // Server endpoint for grading
-  const SERVER_ENDPOINT = 'https://your-grading-server.com/api/grade';
+  const SERVER_ENDPOINT = 'https://cf5a-129-219-21-203.ngrok-free.app/api/grade/automate';
   
   // Student data from Firebase
   let students = [];
@@ -209,69 +210,72 @@ document.addEventListener('DOMContentLoaded', async function() {
    * @param {Array} files - The array of files to send
    * @returns {Promise<string>} - A promise that resolves to the result URL
    */
-  function sendFilesToServer(files) {
-    // Calculate total steps for progress tracking
-    const totalSteps = files.length * 2 + 1; // Processing + Grading + Finalizing
-    let completedSteps = 0;
-    
-    // Update progress function
-    const updateProgressStep = (step) => {
-      completedSteps += step;
-      const percent = (completedSteps / totalSteps) * 100;
-      updateProgress(Math.min(percent, 100));
-    };
-    
-    // Simulate processing each file with delays
-    const processPromises = files.map((file, index) => {
-      return new Promise(resolve => {
-        // Simulate processing delay
-        setTimeout(() => {
-          updateFileStatus(index, 'processing');
-          progressText.textContent = `Processing ${file.name}'s assignment (${index + 1}/${files.length})...`;
-          updateProgressStep(1);
-          
-          // Simulate grading delay
-          setTimeout(() => {
-            updateFileStatus(index, 'completed');
-            progressText.textContent = `Graded ${file.name}'s assignment (${index + 1}/${files.length})`;
-            updateProgressStep(1);
-            resolve();
-          }, 1500 + Math.random() * 1500);
-        }, index * 800);
-      });
-    });
-    
-    // After all files are processed, simulate sending them to the server
-    return Promise.all(processPromises)
-      .then(() => {
-        progressText.textContent = 'Finalizing grades and generating report...';
-        updateProgressStep(1);
+  async function sendFilesToServer(files) {
+    try {
+      // Calculate total steps for progress tracking
+      const totalSteps = files.length + 1; // Processing + Finalizing
+      let completedSteps = 0;
+      
+      // Update progress function
+      const updateProgressStep = (step) => {
+        completedSteps += step;
+        const percent = (completedSteps / totalSteps) * 100;
+        updateProgress(Math.min(percent, 100));
+      };
+      
+      // Extract URLs from files
+      const assignmentUrls = [];
+      
+      // Standard assignment URLs - using these instead of the mock URLs
+      const standardAssignmentUrls = [
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+1.pdf',
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+2.pdf',
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+3.pdf',
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+4.pdf',
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+5.pdf',
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+6.pdf',
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+7.pdf',
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+8.pdf',
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+9.pdf',
+        'https://assignmentfil.s3.us-west-2.amazonaws.com/student+10.pdf'
+      ];
+      
+      // Process each file and update UI
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        updateFileStatus(i, 'processing');
+        progressText.textContent = `Processing ${file.name}'s assignment (${i + 1}/${files.length})...`;
         
-        // Simulate server request delay
-        return new Promise(resolve => {
-          setTimeout(() => {
-            // In a real implementation, we would send the payload to the server
-            const payload = {
-              files: files.map(file => ({
-                studentId: file.id,
-                name: file.name,
-                url: file.url
-              }))
-            };
-            
-            console.log('Sending payload to server:', payload);
-            
-            // For demo purposes, just resolve with a mock result URL
-            resolve('https://your-grading-server.com/results/demo-result-123');
-          }, 2000);
-        });
-      })
-      .then(resultUrl => {
-        // Display the result
-        displayResult(resultUrl);
-        return resultUrl;
-      })
-      .catch(handleError);
+        // Use standard assignment URLs instead of mock URLs
+        if (i < standardAssignmentUrls.length) {
+          assignmentUrls.push(standardAssignmentUrls[i]);
+        } else {
+          // Fallback to file URL if we run out of standard URLs
+          assignmentUrls.push(file.url);
+        }
+        
+        // Short delay to show processing state in UI
+        await new Promise(resolve => setTimeout(resolve, 300));
+        updateFileStatus(i, 'completed');
+        updateProgressStep(1);
+      }
+      
+      progressText.textContent = 'Sending assignments to grading server...';
+      console.log('Sending assignment URLs to server:', assignmentUrls);
+      
+      // Send the assignment URLs to the server using our module
+      const resultUrl = await sendAssignmentUrls(assignmentUrls, (percent, message) => {
+        // This callback is for additional progress updates from the sendAssignmentUrls function
+        progressText.textContent = message;
+      });
+      
+      // Display the result
+      displayResult(resultUrl);
+      return resultUrl;
+    } catch (error) {
+      handleError(error);
+      throw error;
+    }
   }
 
   /**
