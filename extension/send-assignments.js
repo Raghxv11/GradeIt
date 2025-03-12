@@ -6,7 +6,7 @@
 import { saveGradingResult } from './firebase.js';
 
 // Server endpoint for grading
-const SERVER_ENDPOINT = 'https://2c53-129-219-21-203.ngrok-free.app/api/grade/automate';
+const SERVER_ENDPOINT = 'https://1f2a-174-77-171-72.ngrok-free.app/api/grade/automate';
 
 /**
  * Sends assignment URLs to the server for grading
@@ -60,18 +60,23 @@ rubric:'https://assignmentfil.s3.us-west-2.amazonaws.com/Project_2_Rubric+(2).pd
     formData.append('rubric', payload.rubric);
     
     // Add each file URL as a separate form field with the same key
+    let urlFinal =''
     payload.files.forEach(url => {
-      formData.append('files', url);
+      urlFinal += url + ','
     });
+    //log the urlFinal in browser console
+    console.log('Final URL string:', urlFinal);
     
+    formData.append('files', "https://assignmentfil.s3.us-west-2.amazonaws.com/student+1.pdf,https://assignmentfil.s3.us-west-2.amazonaws.com/student+2.pdf,https://assignmentfil.s3.us-west-2.amazonaws.com/student+3.pdf,https://assignmentfil.s3.us-west-2.amazonaws.com/student+4.pdf,https://assignmentfil.s3.us-west-2.amazonaws.com/student+5.pdf,https://assignmentfil.s3.us-west-2.amazonaws.com/student+6.pdf,https://assignmentfil.s3.us-west-2.amazonaws.com/student+7.pdf,https://assignmentfil.s3.us-west-2.amazonaws.com/student+8.pdf");
     console.log('Sending multipart/form-data request to server');
-    
+    console.log(formData);
     // Send the formData to the server
     const response = await fetch(SERVER_ENDPOINT, {
       method: 'POST',
       // No need to set Content-Type header, the browser will set it automatically with the boundary
       body: formData
     });
+
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -106,18 +111,17 @@ rubric:'https://assignmentfil.s3.us-west-2.amazonaws.com/Project_2_Rubric+(2).pd
  * @returns {Promise<string>} - A promise that resolves to the result URL
  */
 export async function sendStandardAssignments(progressCallback = null) {
-  const standardAssignmentUrls = [
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+1.pdf',
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+2.pdf',
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+3.pdf',
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+4.pdf',
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+5.pdf',
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+6.pdf',
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+7.pdf',
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+8.pdf',
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+9.pdf',
-    'https://assignmentfil.s3.us-west-2.amazonaws.com/student+10.pdf'
-  ];
+  const standardAssignmentUrls = 
+    `https://assignmentfil.s3.us-west-2.amazonaws.com/student+1.pdf,
+    https://assignmentfil.s3.us-west-2.amazonaws.com/student+2.pdf,
+    https://assignmentfil.s3.us-west-2.amazonaws.com/student+3.pdf,
+    https://assignmentfil.s3.us-west-2.amazonaws.com/student+4.pdf,
+    https://assignmentfil.s3.us-west-2.amazonaws.com/student+5.pdf,
+    https://assignmentfil.s3.us-west-2.amazonaws.com/student+6.pdf,
+    https://assignmentfil.s3.us-west-2.amazonaws.com/student+7.pdf,
+    https://assignmentfil.s3.us-west-2.amazonaws.com/student+8.pdf,
+    `
+  
   
   return sendAssignmentUrls(standardAssignmentUrls, progressCallback);
 }
