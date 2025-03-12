@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore, collection, doc, getDoc, getDocs, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, where } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -188,6 +188,60 @@ export async function updateResultById(id: string, data: any) {
     return true;
   } catch (error) {
     console.error("Error updating document:", error);
+    throw error;
+  }
+}
+
+// Function to get a student by name
+export async function getStudentByName(name: string) {
+  try {
+    console.log(`Searching for student with name: ${name}`);
+    const studentsRef = collection(db, "students");
+    const q = query(studentsRef, where("id", "==", name));
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      // Return the first matching student
+      const studentDoc = querySnapshot.docs[0];
+      return {
+        id: studentDoc.id,
+        ...studentDoc.data()
+      };
+    } else {
+      console.log(`No student found with name: ${name}`);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error getting student:", error);
+    throw error;
+  }
+}
+
+// Function to update a student's finalProject grade
+export async function updateStudentGrade(studentId: string, grade: number) {
+  try {
+    console.log(`Updating grade for student ID: ${studentId}`);
+    console.log(`New grade: ${grade}`);
+    //find the student by the name in the students collection
+    const studentRef = collection(db, "students");
+    const q = query(studentRef, where("id", "==", studentId));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      const studentDoc = querySnapshot.docs[0];
+      const studentRef = doc(db, "students", studentDoc.id);
+      // Update the finalProject field with the grade
+      await updateDoc(studentRef, {
+        finalProject: grade,
+        updatedAt: serverTimestamp()
+      });
+      console.log('Student grade successfully updated');
+      return true;
+    } else {
+      console.log(`No student found with ID: ${studentId}`);
+      return false;
+    }
+  } catch (error) {
+    console.error("Error updating student grade:", error);
     throw error;
   }
 }

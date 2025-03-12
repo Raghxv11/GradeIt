@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import Graphs from "@/components/graphs";
 import { useRouter } from 'next/router';
-import { getResultById, getAllResults, updateResultById } from '@/lib/firebase';
+import { getResultById, getAllResults, updateResultById, getStudentByName, updateStudentGrade } from '@/lib/firebase';
 
 // Types from index page
 interface CriterionData {
@@ -33,6 +33,14 @@ interface Section {
   title: string;
   grade: string;
   description: string;
+}
+
+// Add this interface for Student data
+interface Student {
+  id: string;
+  name: string;
+  finalProject?: number;
+  [key: string]: any; // Allow for other properties
 }
 
 // Add this interface for Firebase result data
@@ -171,56 +179,96 @@ const ResultDisplay = ({
   letterGrade, 
   overallFeedback,
   isEditing,
-  onSectionChange
+  onSectionChange,
+  onApproveGrade,
+  fileName,
+  isApproving,
+  isApproved
 }: {
   sections: Section[],
   totalGrade: string,
   letterGrade: string,
   overallFeedback: string,
   isEditing: boolean,
-  onSectionChange?: (sections: Section[], totalGrade: string, letterGrade: string, overallFeedback: string) => void
+  fileName: string,
+  isApproving?: boolean,
+  isApproved?: boolean,
+  onSectionChange?: (sections: Section[], totalGrade: string, letterGrade: string, overallFeedback: string) => void,
+  onApproveGrade?: (grade: number) => Promise<void>
 }) => {
   return (
     <div className="space-y-6">
       {/* Grade Summary */}
       {(totalGrade || letterGrade) && (
         <div className="flex items-center justify-between bg-card p-4 rounded-lg border border-border">
-          {totalGrade && (
-            <div className="text-lg font-semibold">
-              <span className="text-muted-foreground">Total Grade:</span>
-              {isEditing ? (
-                <Input
-                  className="ml-2 w-24 inline-block"
-                  value={totalGrade}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    if (onSectionChange) {
-                      onSectionChange(sections, e.target.value, letterGrade, overallFeedback);
-                    }
-                  }}
-                />
-              ) : (
-                <span className="ml-2 text-primary">{totalGrade}</span>
-              )}
-            </div>
-          )}
-          {letterGrade && (
-            <div className="text-lg font-semibold">
-              <span className="text-muted-foreground">Letter Grade:</span>
-              {isEditing ? (
-                <Input
-                  className="ml-2 w-24 inline-block"
-                  value={letterGrade}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    if (onSectionChange) {
-                      onSectionChange(sections, totalGrade, e.target.value, overallFeedback);
-                    }
-                  }}
-                />
-              ) : (
-                <span className="ml-2 text-primary">{letterGrade}</span>
-              )}
-            </div>
-          )}
+          <div className="flex items-center">
+            {totalGrade && (
+              <div className="text-lg font-semibold">
+                <span className="text-muted-foreground">Total Grade:</span>
+                {isEditing ? (
+                  <Input
+                    className="ml-2 w-24 inline-block"
+                    value={totalGrade}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                      if (onSectionChange) {
+                        onSectionChange(sections, e.target.value, letterGrade, overallFeedback);
+                      }
+                    }}
+                  />
+                ) : (
+                  <span className="ml-2 text-primary">{totalGrade}</span>
+                )}
+              </div>
+            )}
+            {letterGrade && (
+              <div className="text-lg font-semibold ml-4">
+                <span className="text-muted-foreground">Letter Grade:</span>
+                {isEditing ? (
+                  <Input
+                    className="ml-2 w-24 inline-block"
+                    value={letterGrade}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                      if (onSectionChange) {
+                        onSectionChange(sections, totalGrade, e.target.value, overallFeedback);
+                      }
+                    }}
+                  />
+                ) : (
+                  <span className="ml-2 text-primary">{letterGrade}</span>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center">
+            {/* Approved Status */}
+            {isApproved && (
+              <div className="flex items-center text-green-600 mr-4">
+                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="font-medium">Grade Approved</span>
+              </div>
+            )}
+            
+            {/* Add Approve Grade Button */}
+            {!isEditing && onApproveGrade && !isApproved && (
+              <Button 
+                variant="default" 
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => {
+                  // Extract the numeric value from totalGrade (remove % sign)
+                  const gradeValue = parseFloat(totalGrade.replace('%', ''));
+                  if (!isNaN(gradeValue)) {
+                    onApproveGrade(gradeValue);
+                  }
+                }}
+                disabled={isApproving}
+              >
+                {isApproving ? "Approving..." : "Approve Grade"}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -324,6 +372,8 @@ function ResultPage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
+  const [approvingGrade, setApprovingGrade] = useState(false);
+  const [approvedGrades, setApprovedGrades] = useState<{[key: string]: boolean}>({});
 
   // Add state to track edited results
   const [editedResults, setEditedResults] = useState<AssignmentResult[]>([]);
@@ -367,6 +417,30 @@ function ResultPage() {
           // Check if we have results array
           if (resultData.results && Array.isArray(resultData.results)) {
             setResults(resultData.results);
+            
+            // Check for approved grades
+            const approvedGradesObj: {[key: string]: boolean} = {};
+            
+            // For each result, check if the student has a grade in the database
+            for (const result of resultData.results) {
+              try {
+                const fileName = result.fileName;
+                const studentName = fileName.replace('.pdf', '');
+                
+                // Find the student in the database
+                const student = await getStudentByName(studentName) as Student | null;
+                
+                if (student && student.finalProject !== undefined) {
+                  // If the student has a finalProject grade, mark it as approved
+                  approvedGradesObj[fileName] = true;
+                  console.log(`Found approved grade for ${studentName}: ${student.finalProject}`);
+                }
+              } catch (err) {
+                console.error('Error checking student grade:', err);
+              }
+            }
+            
+            setApprovedGrades(approvedGradesObj);
           } else if (resultData.response && typeof resultData.response === 'string') {
             // If we have a response string but no results array, parse it
             const responseStr = resultData.response;
@@ -608,6 +682,40 @@ function ResultPage() {
       // Update the document in Firebase
       await updateResultById(documentId, updateData);
       
+      // If we have edited the active tab, also update the student's grade
+      if (parsedResults && editedResults[activeTab]) {
+        try {
+          // Extract student name from the fileName
+          const fileName = editedResults[activeTab].fileName;
+          const studentName = fileName.replace('.pdf', '');
+          
+          // Get the grade value
+          const gradeValue = parseFloat(parsedResults.totalGrade.replace('%', ''));
+          
+          if (!isNaN(gradeValue)) {
+            // Find the student in the database
+            const student = await getStudentByName(studentName) as Student | null;
+            
+            if (student) {
+              // Update the student's finalProject grade
+              await updateStudentGrade(student.id, gradeValue);
+              console.log(`Updated grade for ${studentName}: ${gradeValue}`);
+              
+              // Mark this student's grade as approved
+              setApprovedGrades(prev => ({
+                ...prev,
+                [fileName]: true
+              }));
+            } else {
+              console.log(`Student not found: ${studentName}`);
+            }
+          }
+        } catch (err) {
+          console.error('Error updating student grade:', err);
+          // Don't fail the whole operation if student update fails
+        }
+      }
+      
       console.log('Changes approved and saved to Firebase!');
       setHasChanges(false);
       setIsEditing(false);
@@ -621,10 +729,54 @@ function ResultPage() {
         setVisualizationData(editedVisualizationData);
       }
     } catch (error) {
-      console.error('Error updating results:', error);
+      console.error("Error updating results:", error);
       setError('Failed to update results. Please try again later.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Function to handle approving a grade for a student
+  const handleApproveGrade = async (grade: number) => {
+    if (!results[activeTab]) {
+      setError("No active result to approve");
+      return;
+    }
+
+    try {
+      setApprovingGrade(true);
+      
+      // Extract student name from the fileName (e.g., "student1.pdf" -> "student1")
+      const fileName = results[activeTab].fileName;
+      const studentName = fileName.replace('.pdf', '');
+      
+      console.log(`Approving grade for student: ${studentName}`);
+      console.log(`Grade to approve: ${grade}`);
+      
+      // Find the student in the database
+      const student = await getStudentByName(studentName) as Student | null;
+      
+      if (!student) {
+        setError(`Student not found: ${studentName}`);
+        return;
+      }
+      
+      // Update the student's finalProject grade
+      await updateStudentGrade(student.id, grade);
+      
+      console.log(`Grade approved for ${studentName}: ${grade}`);
+      
+      // Mark this student's grade as approved
+      setApprovedGrades(prev => ({
+        ...prev,
+        [fileName]: true
+      }));
+      
+    } catch (err) {
+      console.error('Error approving grade:', err);
+      setError('Failed to approve grade. Please try again later.');
+    } finally {
+      setApprovingGrade(false);
     }
   };
 
@@ -752,6 +904,10 @@ function ResultPage() {
                       overallFeedback={parsedResults.overallFeedback}
                       isEditing={isEditing}
                       onSectionChange={handleSectionChange}
+                      fileName={results[activeTab].fileName}
+                      onApproveGrade={!approvedGrades[results[activeTab].fileName] ? handleApproveGrade : undefined}
+                      isApproving={approvingGrade}
+                      isApproved={approvedGrades[results[activeTab].fileName]}
                     />
                   )}
                 </div>
