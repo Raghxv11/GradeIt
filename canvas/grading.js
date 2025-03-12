@@ -46,7 +46,7 @@ function updateGradebookUI(students) {
     row.appendChild(nameCell);
     
     const finalExamCell = document.createElement('td');
-    finalExamCell.textContent = student.finalProject !== undefined ? student.finalProject.toString() : 'N/A';
+    finalExamCell.textContent = student.finalProject !== 0 ? student.finalProject.toString() : 'N/A';
     row.appendChild(finalExamCell);
     
     const assignment1Cell = document.createElement('td');
