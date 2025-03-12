@@ -30,7 +30,7 @@ A Chrome extension that processes student assignment PDFs, sends them to a gradi
 To configure the extension to work with your grading server, modify the `SERVER_ENDPOINT` variable in `popup.js` to point to your server's API endpoint.
 
 ```javascript
-const SERVER_ENDPOINT = 'https://your-grading-server.com/api/grade';
+const SERVER_ENDPOINT = 'https://cf5a-129-219-21-203.ngrok-free.app/api/grade/';
 ```
 
 ## Development
