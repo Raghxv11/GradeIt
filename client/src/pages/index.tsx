@@ -84,13 +84,13 @@ export default function AssignmentPage() {
       // Determine which endpoint to use based on file type
       if (files.images.length > 0) {
         // Handle image submission - no rubric needed
-        endpoint = "http://localhost:8080/api/grade/image";
+        endpoint = "http://localhost:8080/api/grade/";
         files.images.forEach((file) => {
           formData.append("image", file);
         });
       } else {
         // Handle PDF submission - requires rubric
-        endpoint = "http://localhost:8080/api/grade/pdf";
+        endpoint = "http://localhost:8080/api/grade/";
         files.pdfs.forEach((file) => {
           formData.append("pdf", file);
         });
@@ -103,6 +103,9 @@ export default function AssignmentPage() {
         console.log(pair[0], pair[1]);
       }
 
+      console.log('Sending request to:', endpoint);
+      
+      // Use a more robust approach to fetch the complete response
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -111,75 +114,164 @@ export default function AssignmentPage() {
         body: formData,
       });
 
-      const data = await response.json();
+      // Ensure we get the complete response by using the Response.text() method first
+      const responseText = await response.text();
+      console.log('Raw API Response Text:', responseText);
+      
+      // Then parse the text to JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('API Response Status:', response.status);
+        console.log('API Response Headers:', Object.fromEntries([...response.headers]));
+        console.log('API Response Data:', data);
+      } catch (parseError) {
+        console.error('Error parsing JSON response:', parseError);
+        console.error('Incomplete or invalid JSON received:', responseText);
+        setError("Failed to parse response from server. Received incomplete or invalid JSON.");
+        setLoading(false);
+        return;
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
+        const errorMessage = data?.error || "Something went wrong";
+        console.error("API Error:", errorMessage);
+        setError(errorMessage);
+        setLoading(false);
+        return;
       }
 
       if (data.status === "success" && data.response) {
-        if (files.pdfs.length > 1) {
-          // Handle multiple PDFs
+        console.log("Processing successful response");
+        let processedResults: AssignmentResult[] = [];
+        
+        if (files.pdfs.length > 1 || files.images.length > 1) {
+          // Handle multiple files
+          console.log("Processing multiple files response");
+          
+          // Split response by file markers
           const responseSegments = data.response
             .split(/Response for /)
             .filter((segment: string) => segment.trim().length > 0) // Remove empty segments
             .map((segment: string) => {
+              // Extract filename and content
               const firstLine = segment.split("\n")[0];
               const fileName = firstLine.replace(":", "").trim();
               const content = segment.substring(firstLine.length + 1).trim();
 
+              console.log(`Extracted segment for file: ${fileName}`);
               return {
                 fileName,
                 content,
               };
-            })
-            .filter((result: AssignmentResult) =>
-              files.pdfs.some((file) => file.name === result.fileName)
-            ); // Only keep results that match uploaded files
+            });
+          
+          // Filter results to match uploaded files
+          processedResults = responseSegments.filter((result: AssignmentResult) => {
+            return files.pdfs.some((file) => file.name === result.fileName) || 
+                   files.images.some((file) => file.name === result.fileName);
+          });
+          
+          // If we didn't successfully match files, use the segments as-is
+          if (processedResults.length === 0 && responseSegments.length > 0) {
+            console.log("Using raw response segments since no filename matches were found");
+            processedResults = responseSegments;
+          }
 
-          setResults(responseSegments);
+          console.log("Processed results:", processedResults);
 
-          // Generate plagiarism result for multiple PDFs
+          // Generate plagiarism result for multiple files
           const randomPercentage = Math.floor(Math.random() * 35);
           setPlagiarismResult({ comparisonPercentage: randomPercentage });
         } else {
-          // Keep original single file handling
-          setResult(data.response);
-          console.log("Result:", data.response);
-
-          // Set results for the UI
-          setResults([
+          // Handle single file
+          console.log("Processing single file response");
+          
+          // Create a simple result object
+          processedResults = [
             {
-              fileName:
-                files.pdfs[0]?.name || files.images[0]?.name || "Submission",
+              fileName: files.pdfs[0]?.name || files.images[0]?.name || "Submission",
               content: data.response,
             },
-          ]);
+          ];
+          
           setPlagiarismResult(null);
         }
 
-        // Rest of the visualization logic...
+        // Set results state
+        setResults(processedResults);
+        console.log("Final results to be displayed:", processedResults);
+        
+        // If we have results but processedResults is empty, create a fallback
+        if (processedResults.length === 0) {
+          const fallbackResult = {
+            fileName: "Submission",
+            content: data.response,
+          };
+          setResults([fallbackResult]);
+          console.log("Using fallback result:", fallbackResult);
+        }
+
+        // Now let's try to extract visualization data
         try {
-          const visualizationResponse = await fetch(
-            "http://localhost:8080/api/visualization",
-            {
-              method: "POST",
-            }
-          );
-
-          if (!visualizationResponse.ok) {
-            console.error(
-              "Visualization fetch failed:",
-              visualizationResponse.statusText
-            );
-            return;
+          // Parse the response to extract criteria, scores, and grades
+          const responseText = data.response;
+          
+          // Extract criteria and scores using multiple regex patterns to match different formats
+          const criteriaMatches: [string, string, string][] = [];
+          
+          // Match format: "* **Criteria:** score/total" or "• Criteria: score/total"
+          const criteriaRegex1 = /\*\s+\*\*([^:]+):\*\*\s+(\d+)\/(\d+)/g;
+          const criteriaRegex2 = /•\s+([^:]+):\s+(\d+)\/(\d+)/g;
+          const criteriaRegex3 = /\*\*([^:]+):\*\*\s+(\d+)\/(\d+)/g;
+          
+          // Collect all matches from different formats
+          const matches1 = [...responseText.matchAll(criteriaRegex1)];
+          const matches2 = [...responseText.matchAll(criteriaRegex2)];
+          const matches3 = [...responseText.matchAll(criteriaRegex3)];
+          
+          // Combine all matches
+          matches1.forEach(match => criteriaMatches.push([match[1].trim(), match[2], match[3]]));
+          matches2.forEach(match => criteriaMatches.push([match[1].trim(), match[2], match[3]]));
+          matches3.forEach(match => criteriaMatches.push([match[1].trim(), match[2], match[3]]));
+          
+          // Extract percentage grade (try multiple formats)
+          const percentageMatch1 = responseText.match(/\*\*Total Percentage Grade:\*\*\s+([\d\.]+)%/);
+          const percentageMatch2 = responseText.match(/Total Percentage Grade:\s+([\d\.]+)%/);
+          const percentageGrade = percentageMatch1 ? parseFloat(percentageMatch1[1]) : 
+                                  percentageMatch2 ? parseFloat(percentageMatch2[1]) : 0;
+          
+          // Extract letter grade (try multiple formats)
+          const letterMatch1 = responseText.match(/\*\*Letter Grade:\*\*\s+([A-F][+-]?)/);
+          const letterMatch2 = responseText.match(/Letter Grade:\s+([A-F][+-]?)/);
+          const letterGrade = letterMatch1 ? letterMatch1[1] : 
+                              letterMatch2 ? letterMatch2[1] : "";
+          
+          // Create visualization data structure
+          const extractedCriteria = criteriaMatches.map((match) => ({
+            criteria: match[0],
+            scored: parseInt(match[1], 10),
+            total: parseInt(match[2], 10)
+          }));
+          
+          // Only set visualization data if we have criteria and grades
+          if (extractedCriteria.length > 0) {
+            const visualizationData = {
+              criteria: extractedCriteria,
+              percentage_grade: percentageGrade,
+              letter_grade: letterGrade
+            };
+            
+            setVisualizationData(visualizationData);
+            console.log("Visualization data extracted:", visualizationData);
+          } else {
+            console.warn("No criteria data found in response for visualization");
+            setVisualizationData(null);
           }
-
-          const visualizationData = await visualizationResponse.json();
-          console.log("Visualization Data:", visualizationData);
-          setVisualizationData(visualizationData);
-        } catch (vizErr) {
-          console.error("Error fetching visualization:", vizErr);
+          
+        } catch (extractErr) {
+          console.error("Error extracting visualization data:", extractErr);
+          setVisualizationData(null);
         }
       } else {
         throw new Error("Invalid response format from server");
@@ -203,64 +295,131 @@ export default function AssignmentPage() {
     let totalGrade = "";
     let letterGrade = "";
     let overallFeedback = "";
+    
+    // Clean up the text: remove the header if it exists and extra blank lines
+    let cleanText = text;
+    if (cleanText.startsWith("Response for")) {
+      // Remove the "Response for file.pdf:" line and any immediate blank lines
+      cleanText = cleanText.replace(/^Response for [^:]+:[\s\n]+/, '');
+    }
 
-    // Parse the text into sections and remove asterisks
-    text.split("\n").forEach((line) => {
-      // Remove asterisks from the line
-      line = line.replace(/\*/g, "").trim();
-
-      if (line.startsWith("•")) {
-        // New section header
-        const [title, grade] = line.substring(1).split(":");
-        currentSection = title.trim();
-        sections[currentSection] = grade.trim();
-      } else if (line.startsWith("Total Percentage Grade:")) {
-        totalGrade = line.split(":")[1].trim();
-      } else if (line.startsWith("Letter Grade:")) {
-        letterGrade = line.split(":")[1].trim();
-      } else if (line && currentSection) {
-        // Add description to current section
-        sections[currentSection] += "\n" + line;
-      } else if (line.startsWith("Overall")) {
-        overallFeedback = line;
+    // Parse the text into sections using multiple regex patterns to catch all formats
+    cleanText.split("\n").forEach((line) => {
+      // Trim the line but DON'T remove asterisks yet - we need them for pattern matching
+      const trimmedLine = line.trim();
+      
+      // Match criteria lines (multiple formats)
+      // Format 1: "* **Content:** 52/60"
+      // Format 2: "• Content: 52/60"
+      // Format 3: "**Content:** 52/60"
+      if (trimmedLine.match(/^\*\s+\*\*([^:]+):\*\*\s+(\d+)\/(\d+)/) || 
+          trimmedLine.match(/^•\s+([^:]+):\s+(\d+)\/(\d+)/) ||
+          trimmedLine.match(/^\*\*([^:]+):\*\*\s+(\d+)\/(\d+)/)) {
+        
+        let matches;
+        if (trimmedLine.match(/^\*\s+\*\*([^:]+):\*\*\s+(\d+)\/(\d+)/)) {
+          matches = trimmedLine.match(/^\*\s+\*\*([^:]+):\*\*\s+(\d+)\/(\d+)/);
+        } else if (trimmedLine.match(/^•\s+([^:]+):\s+(\d+)\/(\d+)/)) {
+          matches = trimmedLine.match(/^•\s+([^:]+):\s+(\d+)\/(\d+)/);
+        } else {
+          matches = trimmedLine.match(/^\*\*([^:]+):\*\*\s+(\d+)\/(\d+)/);
+        }
+        
+        if (matches) {
+          currentSection = matches[1].trim();
+          sections[currentSection] = `${matches[2]}/${matches[3]}`;
+        }
+      } 
+      // Check for percentage grade (multiple formats)
+      else if (trimmedLine.match(/^\*\*Total Percentage Grade:\*\*\s+([\d\.]+)%/) || 
+               trimmedLine.match(/^Total Percentage Grade:\s+([\d\.]+)%/)) {
+        const matches = trimmedLine.match(/^\*\*Total Percentage Grade:\*\*\s+([\d\.]+)%/) || 
+                        trimmedLine.match(/^Total Percentage Grade:\s+([\d\.]+)%/);
+        totalGrade = matches ? matches[1] + "%" : "";
+      }
+      // Check for letter grade (multiple formats)
+      else if (trimmedLine.match(/^\*\*Letter Grade:\*\*\s+([A-F][+-]?)/) || 
+               trimmedLine.match(/^Letter Grade:\s+([A-F][+-]?)/)) {
+        const matches = trimmedLine.match(/^\*\*Letter Grade:\*\*\s+([A-F][+-]?)/) || 
+                        trimmedLine.match(/^Letter Grade:\s+([A-F][+-]?)/);
+        letterGrade = matches ? matches[1] : "";
+      } 
+      // Check for "Overall Feedback:" section (multiple formats)
+      else if (trimmedLine.match(/^\*\*Overall Feedback:\*\*/) || 
+               trimmedLine.match(/^Overall Feedback:/) || 
+               trimmedLine.match(/^\*\*Feedback:\*\*/) ||
+               trimmedLine.match(/^Feedback:/)) {
+        
+        const feedbackLine = trimmedLine.replace(/^\*\*Overall Feedback:\*\*\s*/, '')
+                                      .replace(/^Overall Feedback:\s*/, '')
+                                      .replace(/^\*\*Feedback:\*\*\s*/, '')
+                                      .replace(/^Feedback:\s*/, '');
+        overallFeedback = feedbackLine;
+      }
+      // Check for text that just says "Overall Feedback" (without the colon)
+      else if (trimmedLine === "**Overall Feedback**" || 
+               trimmedLine === "Overall Feedback" ||
+               trimmedLine === "**Feedback**" || 
+               trimmedLine === "Feedback") {
+        currentSection = "OverallFeedback";
+        sections[currentSection] = "";
+      }
+      // If we have a current section and this is a descriptive line, add it
+      else if (trimmedLine && currentSection) {
+        // Remove asterisks from description lines
+        const cleanLine = trimmedLine.replace(/\*/g, "").trim();
+        
+        if (currentSection === "OverallFeedback") {
+          overallFeedback += (overallFeedback ? "\n" : "") + cleanLine;
+        } else {
+          sections[currentSection] += "\n" + cleanLine;
+        }
       }
     });
 
     return (
       <div className="space-y-6">
         {/* Grade Summary */}
-        <div className="flex items-center justify-between bg-card p-4 rounded-lg border border-border">
-          <div className="text-lg font-semibold">
-            <span className="text-muted-foreground">Total Grade:</span>
-            <span className="ml-2 text-primary">{totalGrade}</span>
+        {(totalGrade || letterGrade) && (
+          <div className="flex items-center justify-between bg-card p-4 rounded-lg border border-border">
+            {totalGrade && (
+              <div className="text-lg font-semibold">
+                <span className="text-muted-foreground">Total Grade:</span>
+                <span className="ml-2 text-primary">{totalGrade}</span>
+              </div>
+            )}
+            {letterGrade && (
+              <div className="text-lg font-semibold">
+                <span className="text-muted-foreground">Letter Grade:</span>
+                <span className="ml-2 text-primary">{letterGrade}</span>
+              </div>
+            )}
           </div>
-          <div className="text-lg font-semibold">
-            <span className="text-muted-foreground">Letter Grade:</span>
-            <span className="ml-2 text-primary">{letterGrade}</span>
-          </div>
-        </div>
+        )}
 
         {/* Individual Sections */}
         <div className="grid gap-4">
-          {Object.entries(sections).map(([title, content], index) => {
-            const [grade] = content.split("\n");
-            const description = content.split("\n").slice(1).join("\n");
+          {Object.entries(sections)
+            .filter(([title]) => title !== "OverallFeedback")
+            .map(([title, content], index) => {
+              const [grade] = content.split("\n");
+              const description = content.split("\n").slice(1).join("\n");
 
-            return (
-              <div
-                key={index}
-                className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold text-foreground">{title}</h3>
-                  <span className="font-mono text-primary font-bold">
-                    {grade}
-                  </span>
+              return (
+                <div
+                  key={index}
+                  className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-bold text-foreground">{title}</h3>
+                    <span className="font-mono text-primary font-bold">
+                      {grade}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground text-sm">{description}</p>
                 </div>
-                <p className="text-muted-foreground text-sm">{description}</p>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
 
         {/* Overall Feedback */}
@@ -427,7 +586,7 @@ export default function AssignmentPage() {
               {/* Only show rubric upload when PDFs are selected */}
               {files.pdfs.length > 0 && (
                 <>
-                  <h3 className="text-2xl font-bold mb-4 flex items-center text-foreground">
+                  <h3 className="text-2xl font-bold mb-4 flex items-center text-primary">
                     <svg
                       className="w-6 h-6 mr-3 text-primary"
                       fill="none"
