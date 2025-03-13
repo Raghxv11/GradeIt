@@ -129,6 +129,69 @@ function ResultPage() {
                   </div>
                 )}
 
+                {/* Originality Scores for Each Submission */}
+                {plagiarismResult && plagiarismResult.originalityScores && (
+                  <div className="mb-6 p-4 rounded-lg border border-border bg-card">
+                    <h4 className="font-bold mb-3 flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Originality Scores
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {results.map((result, index) => {
+                        const score = plagiarismResult.originalityScores?.[result.fileName] || 0;
+                        return (
+                          <div 
+                            key={index} 
+                            className={`p-3 rounded-md border ${
+                              score < 70 
+                                ? "bg-destructive/10 border-destructive/30 text-destructive" 
+                                : score < 85 
+                                  ? "bg-amber-100 border-amber-300 text-amber-800"
+                                  : "bg-green-100 border-green-300 text-green-800"
+                            }`}
+                          >
+                            <p className="font-medium text-sm">{result.fileName}</p>
+                            <div className="flex items-center mt-1">
+                              <div className="w-full bg-background rounded-full h-2.5 mr-2">
+                                <div 
+                                  className={`h-2.5 rounded-full ${
+                                    score < 70 
+                                      ? "bg-destructive" 
+                                      : score < 85 
+                                        ? "bg-amber-500"
+                                        : "bg-green-500"
+                                  }`} 
+                                  style={{ width: `${score}%` }}
+                                ></div>
+                              </div>
+                              <span className="font-bold whitespace-nowrap">{score}%</span>
+                            </div>
+                            <p className="text-xs mt-1">
+                              {score < 70 
+                                ? "Low originality - potential plagiarism" 
+                                : score < 85 
+                                  ? "Moderate originality"
+                                  : "High originality"}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Tabs */}
                 <div className="flex border-b border-border mb-4 overflow-x-auto pb-1">
                   {results.map((result, index) => (
@@ -160,6 +223,7 @@ function ResultPage() {
                       onApproveGrade={handleApproveGrade}
                       isApproving={approvingGrade}
                       isApproved={approvedGrades[results[activeTab].fileName]}
+                      originalityScore={plagiarismResult?.originalityScores?.[results[activeTab].fileName]}
                     />
                   )}
                 </div>

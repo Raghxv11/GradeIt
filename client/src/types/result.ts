@@ -36,6 +36,7 @@ export interface AssignmentResult {
 
 export interface PlagiarismResult {
   comparisonPercentage: number;
+  originalityScores?: Record<string, number>; // Map of filename to originality percentage
 }
 
 export interface Section {

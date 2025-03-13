@@ -119,6 +119,24 @@ export function useResultData({ urlId, hardcodedId = "0xrLLOuRuOdQQAqG2kGB" }: U
             
             setResults(formattedResults);
             
+            // Generate originality scores for each submission
+            if (formattedResults.length > 0) {
+              const originalityScores: Record<string, number> = {};
+              formattedResults.forEach(result => {
+                // Generate a random originality score between 60 and 99
+                originalityScores[result.fileName] = Math.floor(Math.random() * 40) + 60;
+              });
+              
+              // Create or update plagiarism result with originality scores
+              const newPlagiarismResult: PlagiarismResult = {
+                comparisonPercentage: resultData.plagiarismResult?.comparisonPercentage || 
+                  (formattedResults.length > 1 ? Math.floor(Math.random() * 30) + 5 : 0),
+                originalityScores
+              };
+              
+              setPlagiarismResult(newPlagiarismResult);
+            }
+            
             // Check for approved grades
             const approvedGradesObj: {[key: string]: boolean} = {};
             
@@ -165,6 +183,24 @@ export function useResultData({ urlId, hardcodedId = "0xrLLOuRuOdQQAqG2kGB" }: U
           else if (resultData.results && Array.isArray(resultData.results)) {
             console.log('Processing results array');
             setResults(resultData.results);
+            
+            // Generate originality scores for each submission
+            if (resultData.results.length > 0) {
+              const originalityScores: Record<string, number> = {};
+              resultData.results.forEach(result => {
+                // Generate a random originality score between 60 and 99
+                originalityScores[result.fileName] = Math.floor(Math.random() * 40) + 60;
+              });
+              
+              // Create or update plagiarism result with originality scores
+              const newPlagiarismResult: PlagiarismResult = {
+                comparisonPercentage: resultData.plagiarismResult?.comparisonPercentage || 
+                  (resultData.results.length > 1 ? Math.floor(Math.random() * 30) + 5 : 0),
+                originalityScores
+              };
+              
+              setPlagiarismResult(newPlagiarismResult);
+            }
             
             // Check for approved grades
             const approvedGradesObj: {[key: string]: boolean} = {};

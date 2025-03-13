@@ -15,6 +15,7 @@ interface ResultDisplayProps {
   isApproving?: boolean;
   isApproved?: boolean;
   rawData?: any;
+  originalityScore?: number;
   onSectionChange?: (sections: Section[], totalGrade: string, letterGrade: string, overallFeedback: string) => void;
   onApproveGrade: (grade: number) => Promise<void>;
 }
@@ -30,7 +31,8 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
   fileName,
   isApproving,
   isApproved,
-  rawData
+  rawData,
+  originalityScore
 }) => {
   return (
     <div className="space-y-6">
@@ -56,6 +58,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
                 )}
               </div>
             )}
+            
             {letterGrade && (
               <div className="text-lg font-semibold ml-4">
                 <span className="text-muted-foreground">Letter Grade:</span>
@@ -74,6 +77,22 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
                 )}
               </div>
             )}
+            
+            {/* Originality Score */}
+            {originalityScore !== undefined && (
+              <div className="text-lg font-semibold ml-4">
+                <span className="text-muted-foreground">Originality:</span>
+                <span className={`ml-2 ${
+                  originalityScore < 70 
+                    ? "text-destructive" 
+                    : originalityScore < 85 
+                      ? "text-amber-600"
+                      : "text-green-600"
+                }`}>
+                  {originalityScore}%
+                </span>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center">
@@ -88,7 +107,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
             )}
             
             {/* Add Approve Grade Button */}
-            { onApproveGrade  && (
+            {!isApproved && (
               <Button 
                 variant="default" 
                 className="bg-green-600 hover:bg-green-700"
