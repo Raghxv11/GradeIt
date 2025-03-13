@@ -1,4 +1,4 @@
-<h1 align="center">GRADIFY</h1>
+<h1 align="center">GradeIt</h1>
 
 ![WhatsApp Image 2025-03-12 at 12 23 17_8c392cc4](https://github.com/user-attachments/assets/e8666692-6f5c-4095-9654-96a844e69ddd)
 
@@ -25,8 +25,8 @@ Ensure you have the following installed:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Raghxv11/Hack-SoDA.git
-   cd Hack-SoDA
+   git clone https://github.com/Raghxv11/GradeIt.git
+   cd GradeIt
    ```
 
 2. **Set up the Conda environment:**
@@ -73,3 +73,4 @@ Ensure you have the following installed:
 
 - `/server`: Contains the backend server and AI calls
 - `/client`: Contains the frontend React application
+- `/Extension`: Contians the Chrome extension
