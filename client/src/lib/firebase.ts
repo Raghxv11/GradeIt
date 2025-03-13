@@ -29,15 +29,87 @@ export async function getResultById(id: string) {
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
-      console.log("Document data:", docSnap.data().response);
+      console.log("Document data:", docSnap.data());
+      const data = docSnap.data();
       
-      // Get the response data
-      const responseData = docSnap.data().response;
-      
-      // Check if we have a response string that needs to be parsed
-      if (typeof responseData === 'string') {
+      // Check if we have the new JSON format with 'results' array
+      if (data.results && Array.isArray(data.results)) {
+        console.log("Processing results in new JSON format");
+        
+        // Format results for the UI
+        const formattedResults = data.results.map((result: any) => {
+          // Extract the filename from the assignmentUrl
+          const urlParts = result.assignmentUrl.split('/');
+          const fileName = urlParts[urlParts.length - 1] || "Unknown";
+          
+          // Create a formatted content string from the grades data
+          let content = `Student ID: ${result.studentId}\n`;
+          content += `Letter Grade: ${result.letter_grade}\n`;
+          content += `Total Percentage Grade: ${result.total_percentage_grade}%\n\n`;
+          
+          // Add each criterion
+          if (result.grades) {
+            Object.entries(result.grades).forEach(([criterion, data]: [string, any]) => {
+              content += `**${criterion}:** ${data.score}/${data.total}\n`;
+              content += `${data.comment}\n\n`;
+            });
+          }
+          
+          // Add overall feedback
+          if (result.overall_feedback) {
+            content += `**Overall Feedback:**\n${result.overall_feedback}`;
+          }
+          
+          return {
+            fileName,
+            content,
+            rawData: result // Store the raw data for direct access
+          };
+        });
+        
+        // Create visualization data from the first result if available
+        let visualizationData = null;
+        if (data.results.length > 0) {
+          const firstResult = data.results[0];
+          
+          // Extract criteria, grades, and percentages
+          const criteria: Array<{criteria: string; scored: number; total: number}> = [];
+          
+          // Process each criterion from the grades object
+          if (firstResult.grades) {
+            Object.entries(firstResult.grades).forEach(([criterionName, criterionData]: [string, any]) => {
+              criteria.push({
+                criteria: criterionName,
+                scored: parseInt(criterionData.score),
+                total: parseInt(criterionData.total)
+              });
+            });
+          }
+          
+          // Create visualization data if we have criteria
+          if (criteria.length > 0) {
+            visualizationData = {
+              criteria,
+              percentage_grade: parseInt(firstResult.total_percentage_grade),
+              letter_grade: firstResult.letter_grade
+            };
+          }
+        }
+        
+        // Return the formatted data
+        return {
+          results: formattedResults,
+          visualizationData,
+          rawData: data,
+          id: docSnap.id,
+          ...docSnap.data()
+        };
+      } 
+      // Check if we have a response string that needs to be parsed (legacy format)
+      else if (data.response && typeof data.response === 'string') {
+        console.log("Processing legacy text format");
         // Split the response by "Response for" to get individual student responses
-        const studentResponses = responseData.split(/Response for (?=student\d+\.pdf:)/);
+        const studentResponses = data.response.split(/Response for (?=student\d+\.pdf:)/);
         
         // Filter out any empty strings and process each response
         const results = studentResponses
@@ -60,7 +132,7 @@ export async function getResultById(id: string) {
           const firstResponse = results[0].content;
           
           // Extract criteria, grades, and percentages
-          const criteria = [];
+          const criteria: Array<{criteria: string; scored: number; total: number}> = [];
           
           // Try multiple regex patterns to match criteria
           const criteriaPatterns = [
@@ -133,11 +205,12 @@ export async function getResultById(id: string) {
         return {
           results,
           visualizationData,
+          id: docSnap.id,
           ...docSnap.data()
         };
       }
       
-      return docSnap.data();
+      return { ...docSnap.data(), id: docSnap.id };
     } else {
       console.log("No such document!");
       return null;
