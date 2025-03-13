@@ -3,12 +3,12 @@
 ![WhatsApp Image 2025-03-12 at 12 23 17_8c392cc4](https://github.com/user-attachments/assets/e8666692-6f5c-4095-9654-96a844e69ddd)
 
 ## About Us
-GradeIt is an AI integrated Grading tool that allows professors and educators to grade assignments using AI. With our bulk upload functionality, plagiarism detection, and advanced PDF and image detection software, our application streamlines the grading process so educators can focus on building personal connections with students and usher in a new educational era.
+GradeIt is an AI integrated Grading tool that allows professors and educators to grade assignments using AI. With our bulk upload functionality, plagiarism detection, and advanced PDF and image detection software, our application streamlines the grading process so educators can focus on building personal connections with students and user in a new educational era.
 
 ## Tech Stack
 - **Frontend**: Next.js + Typescript
 - **Backend**: Python, Flask
-- **Other Technologies**: Gemini Pro, LangChain, FAISS
+- **Other Technologies**: Gemini, LangChain, FAISS, AWS, Firebase
 
 ## Getting Started
 
@@ -72,5 +72,5 @@ Ensure you have the following installed:
 ## Project Structure
 
 - `/server`: Contains the backend server and AI calls
-- `/client`: Contains the frontend React application
-- `/Extension`: Contians the Chrome extension
+- `/client`: Contains the frontend NextJs application
+- `/extension`: Contians the Chrome extension
